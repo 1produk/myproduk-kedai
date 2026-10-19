@@ -1,0 +1,181 @@
+/* ===============================
+   login page pro - full css
+   assets/login.css
+   =============================== */
+
+/* -------------------------------
+   global / body
+---------------------------------*/
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Poppins', system-ui, sans-serif;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f0f4f8; /* lembut / pastel background */
+    overflow: hidden;
+}
+
+/* -------------------------------
+   login card wrapper
+---------------------------------*/
+.login-box {
+    width: 100%;
+    max-width: 380px;
+    background: rgba(255,255,255,0.85);
+    padding: 36px 30px;
+    border-radius: 20px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    color: #333;
+    animation: fadeIn 0.7s ease;
+    transition: transform 0.3s, box-shadow 0.3s;
+    position: relative;
+    z-index: 1;
+}
+
+.login-box:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+}
+
+/* fade in animation */
+@keyframes fadeIn {
+    from {opacity:0; transform:translateY(10px);}
+    to {opacity:1; transform:translateY(0);}
+}
+
+/* headings inside login card */
+.login-box h2 {
+    text-align: center;
+    margin-bottom: 24px;
+    font-weight: 600;
+    color: #333;
+    font-size: 24px;
+}
+
+/* -------------------------------
+   form input groups
+---------------------------------*/
+.input-group {
+    position: relative;
+    margin-bottom: 18px;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 14px 42px 14px 14px;
+    border: 1.5px solid rgba(0,0,0,0.1);
+    border-radius: 12px;
+    background: rgba(255,255,255,0.95);
+    color: #333;
+    font-size: 15px;
+    outline: none;
+    transition: border 0.3s, box-shadow 0.3s;
+}
+
+.input-group input::placeholder {
+    color: #aaa;
+}
+
+.input-group input:focus {
+    border-color: #ff6b00;
+    box-shadow: 0 0 8px rgba(255,107,0,0.3);
+}
+
+/* icons inside input */
+.input-group span {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0.6;
+    transition: transform 0.3s, opacity 0.3s;
+}
+
+.input-group input:focus + span {
+    transform: translateY(-50%) scale(1.2);
+    opacity: 1;
+}
+
+/* -------------------------------
+   login button
+---------------------------------*/
+button {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    background: #ff6b00;
+    color: #fff;
+    font-size: 15px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: transform 0.2s, box-shadow 0.3s, background 0.3s;
+}
+
+button:hover {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+    background: #ff7b22;
+}
+
+/* -------------------------------
+   error message
+---------------------------------*/
+.error {
+    background: rgba(255,0,0,0.15);
+    padding: 10px 14px;
+    border-radius: 10px;
+    margin-bottom: 18px;
+    font-size: 14px;
+    text-align: center;
+    color: #d8000c;
+}
+
+/* -------------------------------
+   floating particles / bubbles (optional)
+---------------------------------*/
+#particles {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    z-index: 0;
+}
+
+#particles span {
+    position: absolute;
+    display: block;
+    pointer-events: none;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.05);
+    width: 8px;
+    height: 8px;
+    animation: floatUp linear infinite;
+}
+
+@keyframes floatUp {
+    0% {transform: translateY(0);}
+    100% {transform: translateY(-120vh);}
+}
+
+/* -------------------------------
+   responsive for mobile
+---------------------------------*/
+@media(max-width:480px) {
+    .login-box {
+        padding: 28px 24px;
+        border-radius: 16px;
+    }
+    .input-group input {
+        padding: 12px 36px 12px 12px;
+    }
+    button {
+        padding: 12px;
+        font-size: 14px;
+    }
+}

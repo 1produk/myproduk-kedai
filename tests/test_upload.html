@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<body>
+
+<h3>Test Upload</h3>
+
+<input type="file" id="f">
+<button onclick="go()">Upload</button>
+
+<script>
+function go(){
+    let file = document.getElementById('f').files[0];
+    if (!file) { alert("No file selected"); return; }
+
+    let fd = new FormData();
+    fd.append('file', file);
+
+    fetch('upload.php', {
+        method: 'POST',
+        body: fd
+    })
+    .then(r => r.text())
+    .then(t => alert(t));
+}
+</script>
+
+</body>
+</html>

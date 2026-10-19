@@ -1,0 +1,174 @@
+/* ===============================
+   assets/style.css - lowercase design
+   organized & labelled
+   =============================== */
+
+/* -------------------------------
+   global / resets
+---------------------------------*/
+* {
+    box-sizing: border-box;
+    font-family: inter, system-ui, -apple-system, "poppins", sans-serif;
+}
+
+body {
+    margin: 0;
+    background: #f6f7fb;
+    color: #222;
+}
+
+/* container wrapper */
+.container {
+    max-width: 1100px;
+    margin: 18px auto;
+    padding: 12px;
+}
+
+/* -------------------------------
+   admin header
+---------------------------------*/
+.admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+/* -------------------------------
+   card / panels
+---------------------------------*/
+.card {
+    background: #fff;
+    padding: 14px;
+    border-radius: 8px;
+    border: 1px solid #e6e6e6;
+    margin-bottom: 12px;
+}
+
+/* card headings */
+.card h1,
+.card h2,
+.card h3 {
+    margin: 0 0 8px 0;
+}
+
+/* -------------------------------
+   labels & form inputs
+---------------------------------*/
+label {
+    display: block;
+    margin-top: 8px;
+    font-size: 14px;
+    color: #333;
+}
+
+input[type="text"],
+input[type="password"],
+textarea,
+select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    margin-top: 6px;
+}
+
+textarea {
+    resize: vertical;
+}
+
+/* small description text */
+.desc {
+    font-size: 13px;
+    color: #666;
+    margin-top: 4px;
+}
+
+/* -------------------------------
+   buttons
+---------------------------------*/
+.btn {
+    display: inline-block;
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+    background: #fff;
+    text-decoration: none;
+    color: #333;
+    font-size: 14px;
+}
+
+.btn.small {
+    padding: 4px 8px;
+    font-size: 13px;
+}
+
+.btn-primary,
+.btn-primary:visited {
+    display: inline-block;
+    padding: 10px 18px;
+    border-radius: 6px;
+    background: #ff6b00;
+    color: #fff;
+    text-decoration: none;
+    border: 0;
+}
+
+.btn-primary:hover {
+    opacity: 0.95;
+}
+
+.btn:hover {
+    opacity: 0.9;
+}
+
+/* primary form button */
+.btn-primary.form {
+    display: inline-block;
+    margin-top: 10px;
+}
+
+/* -------------------------------
+   centered wrapper
+---------------------------------*/
+.center-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+}
+
+/* -------------------------------
+   notices / messages
+---------------------------------*/
+.notice.error {
+    background: #ffe6e6;
+    padding: 8px;
+    border-radius: 6px;
+    border: 1px solid #ffbcbc;
+    margin-bottom: 8px;
+}
+
+/* -------------------------------
+   admin product blocks
+---------------------------------*/
+.product-block {
+    padding: 10px;
+    border: 1px solid #eee;
+    border-radius: 6px;
+    margin-bottom: 10px;
+    background: #fafafa;
+}
+
+/* -------------------------------
+   landing page grid
+---------------------------------*/
+.slp-grid {
+    padding: 0;
+}
+
+@media only screen and (max-width: 768px) {
+    .slp-grid {
+        grid-template-columns: 1fr !important;
+    }
+}

@@ -1,0 +1,426 @@
+<?php
+// admin.php (versi penuh dengan tab untuk setiap produk + upload image + preview)
+require __DIR__ . '/../config/config.php';
+
+if (empty($_SESSION['is_admin'])) {
+    header('location: login.php');
+    exit;
+}
+
+$pdo = new PDO($dsn, $db_user, $db_pass, $options);
+
+
+
+// fetch settings
+$stmt = $pdo->query("select * from settings order by id desc limit 1");
+$settings = $stmt->fetch();
+
+if (!$settings) {
+    $settings = [
+        'company_name' => 'nama syarikat anda',
+        'company_banner' => '',
+        'whatsapp' => '60123456789',
+        'copyright_text' => 'myproduk.com'
+    ];
+}
+
+// fetch products ordered by position
+$stmt = $pdo->query("select * from products order by position asc, id asc");
+$products = $stmt->fetchAll();
+?>
+<!doctype html>
+<html lang="ms">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Admin - MyKedai</title>
+<link rel="stylesheet" href="assets/admin.css">
+<style>
+/* button primary */
+.btn-primary {
+    padding:12px 24px;
+    font-size:16px;
+    border-radius:10px;
+    background-color:#ff6b00;
+    color:#fff;
+    border:none;
+    cursor:pointer;
+    transition:0.2s;
+}
+.btn-primary:hover { background-color:#ff7b22; }
+input, textarea { width:100%; max-width:80%; box-sizing:border-box; }
+textarea { min-height:120px; padding:6px; font-size:14px; }
+/* upload box */
+.upload-box { border:2px dashed #d9e2ec; padding:10px; border-radius:8px; display:flex; align-items:center; gap:10px; cursor:pointer; background:#fafcfe; width:200px; height:150px; max-width:100%; box-sizing:border-box; transition:all 0.2s ease; }
+.upload-box:hover { border-color:#0056c7; background:#f0f7ff; }
+.upload-box.dragover { border-color:#007bff; background:#f0f7ff; }
+.upload-input { display:none; }
+.upload-filename { font-size:13px; color:#333; }
+.upload-progress { width:100%; height:8px; background:#eee; border-radius:6px; overflow:hidden; margin-top:8px; display:none; }
+.upload-progress > span { display:block; height:100%; width:0%; background:#007bff; transition: width 0.2s ease; }
+.upload-controls { display:flex; gap:8px; align-items:center; margin-top:8px; }
+.btn-remove-image { background:#ff4d4d; color:#fff; border:none; padding:6px 10px; border-radius:6px; cursor:pointer; font-size:13px; }
+.img-preview img { max-width:180px; border-radius:6px; border:1px solid #ddd; padding:4px; }
+/* tabs */
+.tabs-header { display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; }
+.tab-btn { padding:8px 12px; cursor:pointer; border:1px solid #ccc; border-radius:6px; background:#f7f7f7; transition:0.2s; }
+.tab-btn:hover, .tab-btn.active { background:#ff6b00; color:#fff; border-color:#ff6b00; }
+.tab-content { display:none; margin-bottom:20px; }
+/* responsive */
+@media(max-width:480px){ .upload-box { flex-direction: column; align-items:flex-start; } }
+</style>
+</head>
+<body>
+<div class="container">
+    
+<header class="admin-header">
+<h1>Admin Page Settings</h1>
+<div>
+  <a href="index.php" target="_blank" class="btn">Lihat Laman</a>
+  <a href="logout.php" class="btn">Log Keluar</a>
+</div>
+</header>
+
+<form method="post" action="save.php">
+<!-- company info -->
+<section class="card">
+<h2>Butiran Syarikat</h2>
+<div class="form-group">
+<label>Nama Syarikat</label>
+<input type="text" name="company_name" value="<?php echo htmlspecialchars($settings['company_name']); ?>">
+</div>
+<div class="form-group">
+<label>No Whatsapp</label>
+<input type="text" name="whatsapp" value="<?php echo htmlspecialchars($settings['whatsapp']); ?>">
+<p class="desc">format: 60123456789 atau +60123456789</p>
+</div>
+<div class="form-group">
+<label>copyright</label>
+<input type="text" name="copyright_text" value="<?php echo htmlspecialchars($settings['copyright_text']); ?>">
+</div>
+<div class="form-group">
+<label>Banner (url). Sila paste url banner kedai anda di sini</label>
+<input id="company_banner" type="text" name="company_banner" placeholder="https://example.com/banner.jpg" value="<?php echo htmlspecialchars($settings['company_banner']); ?>">
+<button type="button" class="btn" id="preview_banner_btn">preview</button>
+<div id="banner_preview" class="img-preview" style="margin-top:10px;">
+<?php if(!empty($settings['company_banner'])): ?>
+<img src="<?php echo htmlspecialchars($settings['company_banner']); ?>" alt="banner">
+<?php endif; ?>
+</div>
+</div>
+</section>
+
+<!-- produk tabs -->
+<section class="card">
+<h2>PRODUK</h2>
+<div class="tabs-header">
+<?php foreach($products as $i => $p): ?>
+  <button type="button" class="tab-btn <?php echo $i===0?'active':''; ?>" data-tab="prod_<?php echo $i; ?>">Produk <?php echo $i+1; ?></button>
+<?php endforeach; ?>
+</div>
+
+<?php foreach($products as $i => $p): ?>
+<div class="tab-content" id="prod_<?php echo $i; ?>" style="display: <?php echo $i===0?'block':'none'; ?>;">
+  <h3>Produk <?php echo $p['position']+1; ?></h3>
+  <input type="hidden" name="products[<?php echo $p['position']; ?>][id]" value="<?php echo $p['id']; ?>">
+
+  <div class="form-group">
+    <label>Nama</label>
+    <input type="text" name="products[<?php echo $p['position']; ?>][name]" value="<?php echo htmlspecialchars($p['name']); ?>" placeholder="nama produk">
+  </div>
+
+  <div class="form-group">
+    <label>Harga</label>
+    <input type="text" name="products[<?php echo $p['position']; ?>][price]" value="<?php echo number_format($p['price'],2,'.',''); ?>" style="width:120px;">
+  </div>
+
+  <div class="form-group">
+    <label>Diskaun</label>
+    <div style="display:flex; gap:8px; align-items:center;">
+      <input type="text" name="products[<?php echo $p['position']; ?>][discount]" value="<?php echo htmlspecialchars($p['discount']); ?>" style="width:120px;">
+      <select name="products[<?php echo $p['position']; ?>][discount_type]" style="width:100px;">
+        <option value="percent" <?php if($p['discount_type']=='percent') echo 'selected'; ?>>%</option>
+        <option value="rm" <?php if($p['discount_type']=='rm') echo 'selected'; ?>>RM</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label>Kupon</label>
+    <input type="text" name="products[<?php echo $p['position']; ?>][coupon]" value="<?php echo htmlspecialchars($p['coupon']); ?>" placeholder="PROMO50" style="width:120px;">
+  </div>
+
+  <div class="form-group">
+    <label>Url Gambar / Upload</label>
+    <input id="prod_img_<?php echo $p['position']; ?>" type="text" name="products[<?php echo $p['position']; ?>][image_url]" value="<?php echo htmlspecialchars($p['image_url']); ?>" placeholder="https://example.com/img.jpg">
+
+    <label class="upload-box" for="file_input_<?php echo $p['position']; ?>">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 3v9" stroke="#007bff" stroke-width="1.6" stroke-linecap="round"/><path d="M8 7l4-4 4 4" stroke="#007bff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/><rect x="3" y="13" width="18" height="8" rx="2" stroke="#007bff" stroke-width="1.2"/></svg>
+      <div style="flex:1;">
+        <div class="upload-filename">klik atau drop imej di sini untuk muat naik</div>
+        <div style="font-size:12px;color:#666">saiz maksima 3mb. jenis: jpg, png, webp, gif</div>
+      </div>
+    </label>
+    <input id="file_input_<?php echo $p['position']; ?>" class="upload-input" type="file" accept="image/*" data-target="prod_img_<?php echo $p['position']; ?>" />
+    <div id="progress_wrap_<?php echo $p['position']; ?>" class="upload-progress"><span id="progress_bar_<?php echo $p['position']; ?>"></span></div>
+    <div class="upload-controls">
+      <div id="uploaded_name_<?php echo $p['position']; ?>" class="upload-filename"></div>
+      <button type="button" class="btn-remove-image" data-target="#prod_img_<?php echo $p['position']; ?>">buang</button>
+    </div>
+    <div id="prod_img_<?php echo $p['position']; ?>_preview" class="img-preview" style="margin-top:8px;">
+      <?php if(!empty($p['image_url'])): ?>
+        <img src="<?php echo htmlspecialchars($p['image_url']); ?>" alt="product">
+      <?php endif; ?>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label>Mesej Whatsapp</label>
+    <textarea name="products[<?php echo $p['position']; ?>][wa_message]" placeholder="contoh: hi, saya nak beli {name}"><?php echo htmlspecialchars($p['wa_message']); ?></textarea>
+    <p class="desc">Boleh gunakan placeholders: {name}, {price}, {discount}, {selepasdiskaun}, {coupon}</p>
+  </div>
+
+  <div class="form-group">
+    <label>Detail Produk</label>
+    <textarea name="products[<?php echo $p['position']; ?>][details]" placeholder="keterangan lanjut produk"><?php echo htmlspecialchars($p['details']); ?></textarea>
+  </div>
+
+</div>
+<?php endforeach; ?>
+</section>
+
+<!-- butiran syarikat -->
+<section class="card">
+<h2>butiran syarikat</h2>
+
+<div class="form-group">
+<label>nama syarikat</label>
+<input type="text" name="extra_company[name]"
+       value="<?php echo htmlspecialchars($settings['extra_company_name'] ?? ''); ?>">
+</div>
+
+<div class="form-group">
+<label>alamat</label>
+<textarea name="extra_company[address]"
+          placeholder="alamat penuh syarikat"><?php
+echo htmlspecialchars($settings['extra_company_address'] ?? '');
+?></textarea>
+</div>
+
+<div class="form-group">
+<label>no telefon</label>
+<input type="text" name="extra_company[phone]"
+       value="<?php echo htmlspecialchars($settings['extra_company_phone'] ?? ''); ?>">
+</div>
+
+</section>
+
+<!-- whatsapp button -->
+<section class="card">
+<h2>whatsapp button</h2>
+
+<div class="form-group">
+<label>no whatsapp</label>
+<input type="text" name="extra_company[whatsapp]"
+       placeholder="60123456789"
+       value="<?php echo htmlspecialchars($settings['extra_company_whatsapp'] ?? ''); ?>">
+<p class="desc">format: 60123456789 atau +60123456789</p>
+</div>
+
+</section>
+
+
+
+
+
+
+
+<p style="text-align:right; margin-top:12px;">
+<button type="submit" class="btn-primary">SIMPAN</button>
+</p>
+</form>
+
+
+<section class="card">
+    <h2 style="font-size:18px; font-weight:bold; cursor:pointer;" id="toggle_file_manager">
+        File Manager Gambar ▼
+    </h2>
+    <div id="file_manager_content" style="display:none; margin-top:10px;">
+
+        <div style="display:flex; flex-wrap:wrap; gap:15px;">
+        <?php
+        $files = glob('uploads/*.{jpg,jpeg,png,webp,gif}', GLOB_BRACE);
+
+        foreach($files as $f):
+            $fname = basename($f);
+            $fullUrl = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https://' : 'http://')
+           . $_SERVER['HTTP_HOST']
+           . rtrim(dirname($_SERVER['PHP_SELF']), '/\\') // pastikan tiada slash berlebihan
+           . '/uploads/' 
+           . $fname;
+
+        ?>
+            <div style="width:130px; text-align:center;">
+                <img src="<?php echo $f; ?>" style="width:100%; height:100px; object-fit:cover; border:1px solid #ccc; border-radius:6px;">
+
+                <div style="font-size:12px; word-break:break-all; margin:5px 0;">
+                    <?php echo $fname; ?>
+                </div>
+
+                <!-- Button Delete -->
+                <form method="post" action="delete_file.php" onsubmit="return confirm('Padam fail ini?');" style="margin-bottom:5px;">
+                    <input type="hidden" name="filename" value="<?php echo $fname; ?>">
+                    <button type="submit" class="btn" 
+                            style="background:#d9534f; color:#fff; padding:6px 10px; border-radius:6px; border:none; cursor:pointer;">
+                        Delete
+                    </button>
+                </form>
+
+                <!-- Button Copy URL -->
+                <button onclick="copyToClipboard('<?php echo $fullUrl; ?>')" 
+                        style="background:#0275d8; color:#fff; padding:6px 10px; border-radius:6px; border:none; cursor:pointer;">
+                    Copy URL
+                </button>
+            </div>
+        <?php endforeach; ?>
+        </div>
+    </div>
+</section>
+
+<script>
+// Toggle expand / collapse
+document.getElementById('toggle_file_manager').addEventListener('click', function() {
+    const content = document.getElementById('file_manager_content');
+    if(content.style.display === 'none'){
+        content.style.display = 'flex';
+        this.textContent = 'File Manager Gambar ▲';
+    } else {
+        content.style.display = 'none';
+        this.textContent = 'File Manager Gambar ▼';
+    }
+});
+
+// Copy URL
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(() => {
+        alert('URL disalin!');
+    });
+}
+</script>
+
+</div>
+
+<script src="assets/app.js"></script>
+<script>
+    
+    
+    
+    
+(function(){
+    
+    
+  // tab switch
+  document.querySelectorAll('.tab-btn').forEach(btn=>{
+    btn.addEventListener('click', function(){
+      const tabId = this.dataset.tab;
+      document.querySelectorAll('.tab-content').forEach(tc=>{
+        tc.style.display='none';
+      });
+      document.getElementById(tabId).style.display='block';
+      document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+      this.classList.add('active');
+    });
+  });
+
+  // upload handler same seperti sebelumnya
+  function uploadFile(file, targetInputId, previewWrapId, progressWrapId, progressBarId, uploadedNameId){
+    var xhr=new XMLHttpRequest();
+    var fd=new FormData();
+    fd.append('file', file);
+    xhr.open('POST','upload.php',true);
+    xhr.upload.addEventListener('progress', function(e){
+      if(e.lengthComputable){
+        var percent=Math.round((e.loaded/e.total)*100);
+        var wrap=document.getElementById(progressWrapId);
+        var bar=document.getElementById(progressBarId);
+        if(wrap) wrap.style.display='block';
+        if(bar) bar.style.width=percent+'%';
+      }
+    });
+    xhr.onreadystatechange=function(){
+      if(xhr.readyState===4){
+        try{ var res=JSON.parse(xhr.responseText); } catch(err){ alert('response error: '+xhr.responseText); return; }
+        var wrap=document.getElementById(progressWrapId);
+        var bar=document.getElementById(progressBarId);
+        if(wrap) setTimeout(()=>{wrap.style.display='none'; bar.style.width='0%';},600);
+        if(res.status==='success'){
+          var input=document.getElementById(targetInputId);
+          if(input) input.value=res.url;
+          var prev=document.getElementById(previewWrapId);
+          if(prev) prev.innerHTML='<img src="'+res.url+'" alt="preview">';
+          var fname=document.getElementById(uploadedNameId);
+          if(fname) fname.textContent=res.filename||res.url;
+        } else { alert('gagal upload: '+(res.msg||'unknown')); }
+      }
+    };
+    xhr.send(fd);
+  }
+
+  // attach events
+  document.querySelectorAll('.upload-input').forEach(function(input){
+    var target=input.dataset.target;
+    var fileInputId=input.id;
+    var previewWrapId=target+'_preview';
+    var progressWrapId='progress_wrap_'+fileInputId.split('_').pop();
+    var progressBarId='progress_bar_'+fileInputId.split('_').pop();
+    var uploadedNameId='uploaded_name_'+fileInputId.split('_').pop();
+
+    var label=document.querySelector('label[for="'+fileInputId+'"]');
+    if(label){
+      label.addEventListener('click', e=>{e.preventDefault(); input.click();});
+      label.addEventListener('dragover', e=>{e.preventDefault(); label.classList.add('dragover');});
+      label.addEventListener('dragleave', e=>{label.classList.remove('dragover');});
+      label.addEventListener('drop', e=>{
+        e.preventDefault();
+        label.classList.remove('dragover');
+        if(e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length){
+          input.files=e.dataTransfer.files;
+          input.dispatchEvent(new Event('change'));
+        }
+      });
+    }
+
+    input.addEventListener('change', function(){
+      var file=this.files[0];
+      if(!file) return;
+      var maxSize=3*1024*1024;
+      var allowed=['image/jpeg','image/png','image/gif','image/webp'];
+      if(file.size>maxSize){ alert('saiz fail melebihi 3MB'); return; }
+      if(allowed.indexOf(file.type)===-1){ alert('jenis fail tidak disokong. guna: jpg, png, webp, gif'); return; }
+      uploadFile(file,target,previewWrapId,progressWrapId,progressBarId,uploadedNameId);
+    });
+  });
+
+  // remove buttons
+  document.querySelectorAll('.btn-remove-image').forEach(btn=>{
+    btn.addEventListener('click', function(){
+      var target=document.querySelector(this.dataset.target);
+      if(target) target.value='';
+      var preview=document.querySelector(this.dataset.target+'_preview');
+      if(preview) preview.innerHTML='';
+      var uploadedName=document.getElementById('uploaded_name_'+this.dataset.target.split('_').pop());
+      if(uploadedName) uploadedName.textContent='';
+    });
+  });
+
+  // preview banner
+  var pb=document.getElementById('preview_banner_btn');
+  if(pb) pb.addEventListener('click', function(){
+    var url=document.getElementById('company_banner').value;
+    if(url) document.getElementById('banner_preview').innerHTML='<img src="'+url+'">';
+  });
+
+})();
+</script>
+</body>
+</html>
